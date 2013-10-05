@@ -1,20 +1,21 @@
 class Cron
   class Parser
-    attr_reader :pattern, :fields, :meaning
+    attr_reader :pattern,
+                :fields,
+                :meaning # umm, let me think about it
+
+    FIELDS = %w{ minute hour day_of_month month day_of_week }
 
     def initialize(pattern = nil)
       @pattern = pattern
-      @fields  = {
-                  minute: nil, hour:         nil, day_of_month: nil,
-                  month:  nil, day_of_week:  nil
-                }
-      validate!
-      @meaning = self.humanize
+      @fields  = {}; FIELDS.map { |field| @fields[field.to_sym] = nil }
+      validate! # and don't ask to dissect it!
+      @meaning = humanize # being human, wtf!
     end
 
     def inspect
       %Q{
-          #<#{self.class.name}:#{self.object_id}>
+          #<#{self.class.name}:#{Object::o_hexy_id(self)}> 
           {
             :pattern => "#@pattern",
             :fields  => #{@fields.inspect}
@@ -24,38 +25,43 @@ class Cron
 
     def humanize
       @fields.collect do |_, field|
-        next if field.nil?
-        field.meaning.to_s
+        next if field.nil? # this should never happen, then why wrote this?
+        field.meaning
       end.
         join(", ").
         gsub(/(,\s){2,}/, ", ").
         chomp(", ")
     end
 
-    def self.parse(pattern = nil)
-      self.new(pattern, *args).humanize
+    def self.parse(pattern = nil) # oh, that sounds ridiculous!
+      self.new(pattern).humanize
     end
-
-    #### Private #####
 
     private
 
     def validate!
-      raise InvalidPatternError.new("pattern must be string") unless @pattern.kind_of? String
-      fix_common_typos!
+      raise InvalidCronPatternError.new("cron pattern must be a string, please
+                  read documentation".squish) unless @pattern.kind_of? String
+      fix_common_typos! # how nasty!
+      # do you know that cron has some pretty good fields, huh?
+      # go and, 
       validate_fields!
     end
 
     def validate_fields!
-      fields = @pattern.split
-      raise InvalidPatternError.new("pattern must contain exact five fields") if fields.size != 5
-      minute_field, hour_field, day_of_month_field, month_field, day_of_week_field = *fields
-      @fields[:minute]         = Cron::Parser::MinuteField.new minute_field
-      # TODO
-      # @fields[:hour]         = Cron::Parser::HourField.new hour_field
-      # @fields[:day_of_month] = Cron::Parser::DayOfMonthField.new day_of_month_field
-      # @fields[:month]        = Cron::Parser::MonthField.new month_field
-      # @fields[:day_of_week]  = Cron::Parser::DayOfWeekField.new day_of_week_field
+      pattern_fields = @pattern.split
+      if pattern_fields.size != FIELDS.size
+        raise InvalidCronPatternError.new("cron pattern must contain exact 
+                        #{FIELDS.size} fields seperated by whitespaces")
+      end
+      FIELDS.map.with_index do |field, index|
+        next unless field     == "minute" # TODO remove this condition after implementation
+        field_class           = self.class.name +                  \
+                                "::" + field.capitalize + "Field". \
+                                squish.classify
+        @fields[field.to_sym] = field_class.safe_constantize.      \
+                                new(pattern_fields[index])
+      end
     end
 
     def fix_common_typos!

@@ -8,18 +8,7 @@ module StringExtensions
   end
 
   def ordinal
-    abs_number = self.to_i.abs
-
-    if (11..13).include?(abs_number % 100)
-      "th"
-    else
-      case abs_number % 10
-      when 1; "st"
-      when 2; "nd"
-      when 3; "rd"
-      else    "th"
-      end
-    end
+    ActiveSupport::Inflector.ordinal(self)
   end
 
   def squish
@@ -31,10 +20,13 @@ module StringExtensions
     gsub!(/\s+/, ' ')
     self
   end
-
-  def humanize
-   gsub(/_/, ' ').capitalize
-  end
 end
 
 class String; self.send :include, StringExtensions end
+
+class Object
+  # Generate hex value for requester object in argument
+  def self.o_hexy_id(requester) # that's not "oh sexy lady", or is it?!
+    "0x" + (requester.object_id << 1).to_s(16)
+  end
+end

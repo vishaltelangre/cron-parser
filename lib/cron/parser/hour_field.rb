@@ -1,5 +1,7 @@
 class Cron::Parser
   class HourField < Field
-    # TODO
+    def self.specifications
+      
+    end
   end
 end
