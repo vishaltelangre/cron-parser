@@ -27,10 +27,7 @@ class Cron
       @fields.collect do |_, field|
         next if field.nil? # this should never happen, then why wrote this?
         field.meaning
-      end.
-        join(", ").
-        gsub(/(,\s){2,}/, ", ").
-        chomp(", ")
+      end.join("; ").chomp("; ")
     end
 
     def self.parse(pattern = nil) # oh, that sounds ridiculous!
@@ -55,11 +52,11 @@ class Cron
                         #{FIELDS.size} fields seperated by whitespaces")
       end
       FIELDS.map.with_index do |field, index|
-        next unless field     == "minute" # TODO remove this condition after implementation
-        field_class           = self.class.name +                  \
-                                "::" + field.capitalize + "Field". \
-                                squish.classify
-        @fields[field.to_sym] = field_class.safe_constantize.      \
+        next if field     == "day_of_week" # TODO REMOVE THIS LINE
+        field_class           = self.class.name + "::" + field.split("_"). \
+                                map(&:capitalize).join + "Field".squish.   \
+                                classify
+        @fields[field.to_sym] = field_class.safe_constantize.              \
                                 new(pattern_fields[index])
       end
     end
