@@ -17,4 +17,7 @@ Gem::Specification.new do |s|
   s.homepage = "http://github.com/vishaltelangre/cron-parser"
   s.licenses = [ "MIT" ]
   s.summary = "Dissect your Cron patterns!"
+  s.add_development_dependency "rake", "~>0.9.2.2"
+  s.add_development_dependency "rspec"
+  s.add_dependency "activesupport"
 end
