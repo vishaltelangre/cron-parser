@@ -8,6 +8,7 @@ class Cron::Parser
       super
     end
 
+    # Creates partial meaning (sentence) for the minute field's pattern.
     def self.generate_meaning(list, unit)
       meaning = ""
       meaning += self.field_preposition(unit)

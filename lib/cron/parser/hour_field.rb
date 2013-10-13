@@ -8,6 +8,7 @@ class Cron::Parser
       super
     end
 
+    # Converts 24-hour value to 12-hour am/pm value.
     def self.to_12h(hour)
       case hour.to_i
       when 0
@@ -21,6 +22,7 @@ class Cron::Parser
       end
     end
 
+    # Creates partial meaning (sentence) for the hour field's pattern.
     def self.generate_meaning(list, unit)
       meaning = ""
       meaning += self.field_preposition(unit)

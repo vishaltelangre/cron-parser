@@ -6,9 +6,12 @@ class Cron::Parser
                                               }.map(&:upcase)
     end
 
+    def self.allowed_special_characters; %w{ * / , - }             end
     def self.upper_bound;                "1"                       end
     def self.lower_bound;                "12"                      end
-    def self.allowed_special_characters; %w{ * / , - }             end
+
+    # Adds some month field-specific extra regular expressions to super class's
+    # `specifications` method.
     def self.specifications
       extra_specs = [
         {
@@ -27,6 +30,7 @@ class Cron::Parser
       super + extra_specs
     end
 
+    # Creates partial meaning (sentence) for the month field's pattern.
     def self.generate_meaning(list, unit)
       meaning = ""
       meaning += self.field_preposition(unit)
@@ -35,6 +39,8 @@ class Cron::Parser
       meaning
     end
 
+    # Converts a numerical month value or 3-letter month value to human-readable
+    # month value.
     def self.ascii_month(month)
       case month.to_s.downcase
       when "1", "01", "jan";            "January"

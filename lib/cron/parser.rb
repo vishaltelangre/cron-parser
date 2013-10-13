@@ -14,6 +14,7 @@ class Cron
       @meaning = humanize # being human, wtf!
     end
 
+    # Inspects the parsed pattern, displays fields in pattern and warnings.
     def inspect
       %Q{
           #<#{self.class.name}:#{Object::o_hexy_id(self)}>
@@ -25,12 +26,16 @@ class Cron
       }.squish
     end
 
+    # Alias of `meaning` getter method.
+    # Returns human readable meaning for cron pattern after parsing it.
     def humanize
       @fields.collect do |_, field|
         field.meaning
       end.join("; ").chomp("; ")
     end
 
+    # Returns warnings in pattern fields if any, occured while parsing those
+    # fields.
     def warnings
       warnings = @fields.collect do |_, field|
         "for '#{field.field_name}' field: #{field.warning}" if field.warning
@@ -38,12 +43,14 @@ class Cron
       warnings == "" ? nil : warnings
     end
 
+    # Alias of `new` method.
     def self.parse(pattern = nil) # oh, that sounds ridiculous!
       self.new(pattern).humanize
     end
 
     private
 
+    # Internal method to validate the cron pattern. Raises errors if pattern is invalid.
     def validate!
       raise InvalidCronPatternError.new("cron pattern must be a string, please
                   read documentation".squish) unless @pattern.kind_of? String
@@ -53,6 +60,7 @@ class Cron
       validate_fields!
     end
 
+    # Internal method to validate each field in the pattern.
     def validate_fields!
       pattern_fields = @pattern.split
       if pattern_fields.size != FIELDS.size
@@ -68,6 +76,8 @@ class Cron
       end
     end
 
+    # Internal method to clean up the frequently made typos and mistakes in
+    # the cron pattern.
     def fix_common_typos!
       # well, I don't know what kind of typos people do!
       @pattern.squish!

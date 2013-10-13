@@ -5,9 +5,12 @@ class Cron::Parser
                                                 sat }.map(&:upcase)
     end
 
+    def self.allowed_special_characters; %w{ * / , - }             end
     def self.upper_bound;                "0"                       end
     def self.lower_bound;                "7"                       end
-    def self.allowed_special_characters; %w{ * / , - }             end
+
+    # Adds some day of week field-specific extra regular expressions to super
+    # class's `specifications` method.
     def self.specifications
       extra_specs = [
         {
@@ -22,6 +25,7 @@ class Cron::Parser
       super + extra_specs
     end
 
+    # Creates partial meaning (sentence) for the day of week field's pattern.
     def self.generate_meaning(list, unit)
       meaning = ""
       meaning += self.field_preposition(unit)
@@ -30,6 +34,8 @@ class Cron::Parser
       meaning
     end
 
+    # Converts a numerical day of week value or 3-letter day of week value to
+    # human-readable week-day value.
     def self.ascii_weekday(day)
       case day.to_s.downcase
       when "0", "00", "7", "07", "sun"; "Sunday"
