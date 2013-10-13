@@ -1,6 +1,6 @@
 class Cron::Parser
   class DayOfMonthField < Field
-    def self.allowed_values;             ("1".."31").to_a          end
+    def self.allowed_values; ("1".."9").to_a + ("01".."31").to_a   end
     def self.upper_bound;                self.allowed_values.last  end
     def self.lower_bound;                self.allowed_values.first end
     def self.allowed_special_characters; %w{ * / , - }             end

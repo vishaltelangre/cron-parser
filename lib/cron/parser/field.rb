@@ -1,12 +1,14 @@
 class Cron::Parser
   class Field
     attr_reader :pattern,
-                :meaning
+                :meaning,
+                :warning
 
     def initialize(pattern)
       raise NotImplementedError.new("you just can't do that, sorry!
                     ".squish) if self.class == Cron::Parser::Field
       @pattern = pattern   # for current field only
+      @warning = nil
       @meaning = validate! # current field
     end
 
@@ -15,6 +17,7 @@ class Cron::Parser
           #<#{self.class.name}:#{Object::o_hexy_id(self)}>
           {
            :pattern => "#@pattern",
+           #{":warning => #@warning," if @warning}
            :meaning => "#@meaning"
           }
       }.squish
@@ -22,7 +25,7 @@ class Cron::Parser
 
     def validate!
       investigate_invalid_values! # holmes, did you listen that?
-      
+
       meaning    = ""
       halt_loop  = false
       match_data = nil
@@ -31,7 +34,7 @@ class Cron::Parser
       options    = { unit: self.field_name,
                      exclude_preposition: true
                    }
-      
+
       values.map.with_index do |value, index|
         self.class.specifications.map do |spec|
           next unless spec[:for_fields].include? self.field_name
@@ -41,12 +44,17 @@ class Cron::Parser
             halt_loop = true and break
           end
           list << spec[:yields].(*match_data.captures, options)
+          if spec[:can_halt]
+            halt_loop = true
+            @warning = "'#{value}' is valid but confusing pattern"
+            break
+          end
           break if match_data
         end
         break if halt_loop
       end
-      
-      list    = list.flatten.uniq.sort
+
+      list    = list.flatten.uniq.map(&:to_s).sort
       if meaning.==("") and list.empty?
         raise invalid_field_error_class.new("\"#{self.field_name}\" field's
                                                 pattern is invalid".squish)
@@ -59,7 +67,7 @@ class Cron::Parser
     def self.specifications
       [
        {
-         rule: /\A\*\Z/,         
+         rule: /\A\*\Z/,
          yields: ->(options) do
            "every " + options[:unit].split("_").join(" ")
          end,
@@ -77,12 +85,12 @@ class Cron::Parser
            return list if options[:exclude_preposition]
            return self.generate_meaning(list, options[:unit])
          end,
-         for_fields: %w{ minute hour day_of_month day_of_week }
+         for_fields: %w{ minute hour day_of_month month day_of_week }
        },
        {
          rule: /\A(?<value>\d+)\Z/,
          yields: ->(value, options) do
-           return [value.to_i] if options[:exclude_preposition]
+           return [value] if options[:exclude_preposition]
            return self.generate_meaning([value], options[:unit])
          end,
          for_fields: %w{ minute hour day_of_month month day_of_week }
@@ -105,15 +113,23 @@ class Cron::Parser
            return self.generate_meaning(range, options[:unit])
          end,
          for_fields: %w{ minute hour day_of_month month day_of_week }
+       },
+       {
+         rule: /\A(?<value>\d+)\/\d+\Z/,
+         yields: ->(value, options) do
+           return [value] if options[:exclude_preposition]
+           return self.generate_meaning([value], options[:unit])
+         end,
+         for_fields: %w{ minute hour day_of_month month day_of_week },
+         can_halt: true
        }
       ]
     end
 
     def investigate_invalid_values!
-      invalids = []
-      @pattern.split(/,|\/|\-/).uniq.map do |value|
-        invalids << value unless self.class.allowed_values.to_a.include?(value)
-      end
+      invalids = @pattern.split(/,|\/|\-/).uniq.collect do |value|
+        value unless self.class.allowed_values.to_a.include?(value.upcase)
+      end.compact
       invalids.delete("*")
       raise self.invalid_field_error_class.new("value: '#{invalids.join(', ')}'
       not allowed for '#{field_name}' field, run: '#{self.class}.allowed_values'
@@ -122,7 +138,7 @@ class Cron::Parser
 
     # current field's name, for e.g. 'minute', 'hour', and likewise
     def field_name
-      self.class.name.split("::").last.downcase.sub("of", "_of_").        \
+      self.class.name.split("::").last.downcase.sub("of", "_of_").          \
                                 sub("field", "").downcase
     end
 
@@ -151,7 +167,7 @@ class Cron::Parser
       end
       values
     end
-    
+
     # it's simple
     def invalid_field_error_class
       ("Invalid" + self.field_name.split("_").map(&:capitalize).join +      \

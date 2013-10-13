@@ -1,13 +1,13 @@
 class Cron::Parser
   class HourField < Field
-    def self.allowed_values;             ("0".."23").to_a          end
+    def self.allowed_values; ("0".."9").to_a + ("00".."23").to_a   end
     def self.upper_bound;                self.allowed_values.last  end
     def self.lower_bound;                self.allowed_values.first end
     def self.allowed_special_characters; %w{ * / , - }             end
     def self.specifications
       super
     end
-    
+
     def self.to_12h(hour)
       case hour.to_i
       when 0

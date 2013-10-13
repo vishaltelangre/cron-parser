@@ -1,4 +1,4 @@
-         require "active_support/inflector"
+require          "active_support/inflector"
 require_relative "extras/custom_errors"
 require_relative "extras/extensions"
 require_relative "cron/parser"
