@@ -14,13 +14,13 @@ class Cron
       @meaning = humanize # being human, wtf!
     end
 
-    # Inspects the parsed pattern, displays fields in pattern and warnings.
+    # Inspects the parsed pattern, displays fields in pattern along with their
+    # meanings.
     def inspect
       %Q{
           #<#{self.class.name}:#{Object::o_hexy_id(self)}>
           {
             :pattern => "#@pattern",
-            #{":warnings => \"" + self.warnings + "\"," if self.warnings }
             :fields  => #{@fields.inspect}
           }
       }.squish
@@ -39,8 +39,7 @@ class Cron
     def warnings
       warnings = @fields.collect do |_, field|
         "for '#{field.field_name}' field: #{field.warning}" if field.warning
-      end.compact.join(", ").chomp(", ")
-      warnings == "" ? nil : warnings
+      end.compact.join(", ").chomp(", ").split(", ")
     end
 
     # Alias of `new` method.
@@ -48,12 +47,25 @@ class Cron
       self.new(pattern).humanize
     end
 
+    def method_missing(method, *args, &block)
+      super unless field_methods.include? method
+      self.class.send(:define_method, method) do
+        @fields[method.to_s.sub('_field', '').to_sym]
+      end and self.send(method, *args)
+    end
+
+    def respond_to_missing?(method, include_private = false)
+      field_methods.include? method || super
+    end
+
     private
 
-    # Internal method to validate the cron pattern. Raises errors if pattern is invalid.
+    # Internal method to validate the cron pattern. Raises errors if pattern is
+    # invalid.
     def validate!
-      raise InvalidCronPatternError.new("cron pattern must be a string, please
-                  read documentation".squish) unless @pattern.kind_of? String
+      unless @pattern.kind_of? String
+        raise InvalidCronPatternError.new("cron pattern must be a string".squish)
+      end
       fix_common_typos! # how nasty!
       # do you know that cron has some pretty good fields, huh?
       # go and,
@@ -81,6 +93,10 @@ class Cron
     def fix_common_typos!
       # well, I don't know what kind of typos people do!
       @pattern.squish!
+    end
+
+    def field_methods
+      self.fields.keys.map{|f| (f.to_s + "_field").to_sym }
     end
   end
 end

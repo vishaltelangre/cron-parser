@@ -70,7 +70,8 @@ class Cron::Parser
         break if halt_loop
       end
 
-      list    = list.flatten.uniq.map(&:to_s).sort
+      list = list.flatten.uniq.map(&:to_s).sort
+      list = list.map(&:to_i).sort if !!(/minute|hour|day_of_month/ =~ field_name)
       if meaning.==("") and list.empty?
         raise invalid_field_error_class.new("\"#{self.field_name}\" field's
                                                 pattern is invalid".squish)
@@ -155,9 +156,16 @@ class Cron::Parser
         value unless self.class.allowed_values.to_a.include?(value.upcase)
       end.compact
       invalids.delete("*")
-      raise self.invalid_field_error_class.new("value: '#{invalids.join(', ')}'
-      not allowed for '#{field_name}' field, run: '#{self.class}.allowed_values'
-                                to know valid values".squish) if invalids.any?
+
+      err = nil
+      if invalids.include?('') || invalids.include?(' ')
+        err = "#{field_name} field's pattern is invalid, please run:
+            '#{self.class}.allowed_values' to know valid values".squish
+      elsif invalids.any?
+        err = "value: '#{invalids.join(', ')}' not allowed for '#{field_name}'
+        field, run: '#{self.class}.allowed_values' to know valid values".squish
+      end
+      raise self.invalid_field_error_class.new(err) if err
     end
 
     # Returns current field's name, for e.g. 'minute', 'hour', and likewise.

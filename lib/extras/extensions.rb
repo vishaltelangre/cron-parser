@@ -2,10 +2,10 @@ module StringExtensions
   # Adds 'th', 'nd', 'st' like ordinal to numerical (string) values.
   # e.g. 22nd, 40th, 1st etc.
   def ordinalize
-    unless !!(/\A\d+\Z|\A\d+\.\d+\Z/ =~ self)
-      raise NameError.new "cannot ordinalize non-numeric value"
-    end
-    "#{self}#{self.ordinal}"
+    match = /\A(?<int>\d+)\Z|\A(?<real>\d+\.\d+)\Z/.match(self)
+    raise NameError.new("cannot ordinalize non-numeric value") unless match
+    num = match[:int] ? self.to_i : self.to_f
+    "#{num}#{num.to_s.ordinal}"
   end
 
   def ordinal
