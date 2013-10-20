@@ -91,6 +91,7 @@ What about wrong or invalid patterns, huh?
 * This parser is based upon the specifications of `crontab(5)`.
 * Following are the pattern fields, and respective allowed values:
 
+```
     *    *    *    *    *
     ┬    ┬    ┬    ┬    ┬
     │    │    │    │    │
@@ -100,6 +101,7 @@ What about wrong or invalid patterns, huh?
     │    │    └─────────────── day_of_month (1-31)
     │    └──────────────────── hour (0-23)
     └───────────────────────── minute (0-59)
+```
 
 * When specifying day of week, both day 0 and day 7 will be considered Sunday.
 * Ranges & Lists of numbers are allowed.
